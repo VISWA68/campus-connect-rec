@@ -13,7 +13,7 @@ class UserProvider extends ChangeNotifier {
   Future<bool> loginAsAdmin(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.219.231:5000/login_event_admin'),
+        Uri.parse('http://172.16.59.107:5000/login_event_admin'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': email,
@@ -46,7 +46,7 @@ class UserProvider extends ChangeNotifier {
       if (adminEmail == null) return;
 
       final response = await http.get(
-        Uri.parse('http://192.168.219.231:5000/get_admin_events/$adminEmail'),
+        Uri.parse('http://172.16.59.107:5000/get_admin_events/$adminEmail'),
       );
 
       final responseData = json.decode(response.body);
@@ -67,13 +67,14 @@ class UserProvider extends ChangeNotifier {
   Future<void> fetchAllEvents() async {
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.219.231:5000/get_events'),
+        Uri.parse('http://172.16.59.107:5000/get_events'),
       );
 
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        allEvents = List<Map<String, dynamic>>.from(responseData['events'] ?? []);
+        allEvents =
+            List<Map<String, dynamic>>.from(responseData['events'] ?? []);
         notifyListeners();
       } else {
         error = responseData['error'] ?? 'Failed to fetch all events';
@@ -95,7 +96,7 @@ class UserProvider extends ChangeNotifier {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.219.231:5000/create_event'),
+        Uri.parse('http://172.16.59.107:5000/create_event'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'event_name': eventName,
@@ -131,13 +132,15 @@ class UserProvider extends ChangeNotifier {
     try {
       selectedEventId = eventId;
       final response = await http.get(
-        Uri.parse('http://192.168.219.231:5000/get_registered_participants/$eventId'),
+        Uri.parse(
+            'http://172.16.59.107:5000/get_registered_participants/$eventId'),
       );
 
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
-        registeredParticipants = List<Map<String, dynamic>>.from(responseData['participants'] ?? []);
+        registeredParticipants =
+            List<Map<String, dynamic>>.from(responseData['participants'] ?? []);
       } else {
         error = responseData['error'] ?? 'Failed to fetch participants';
       }

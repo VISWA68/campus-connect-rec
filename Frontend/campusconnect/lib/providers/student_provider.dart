@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/student.dart';
 import '../services/api_service.dart';
 
@@ -49,6 +50,7 @@ class StudentProvider extends ChangeNotifier {
       if (result['success']) {
         _studentId = result['studentId'];
         await fetchStudentDetails(); // Fetch full details after login
+        await _loadStoredQRCodes();
         setLoading(false);
         return true;
       } else {
@@ -131,13 +133,29 @@ class StudentProvider extends ChangeNotifier {
     if (studentData != null) {
       _currentStudent = Student(
         id: studentData['student_id'],
-        rollNo: studentData['roll_no'] ?? studentData['student_id'],  // Fallback to student_id if roll_no not present
+        rollNo: studentData['roll_no'] ??
+            studentData[
+                'student_id'], // Fallback to student_id if roll_no not present
         name: studentData['name'],
         email: studentData['email'],
       );
       notifyListeners();
     } else {
       setError("Failed to fetch student details");
+    }
+  }
+
+  Future<void> _loadStoredQRCodes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys();
+
+    for (String key in keys) {
+      if (key.startsWith('qr_')) {
+        final qrData = prefs.getString(key);
+        if (qrData != null) {
+          print('Loaded QR Code: $qrData'); // Debugging
+        }
+      }
     }
   }
 

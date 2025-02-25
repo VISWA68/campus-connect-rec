@@ -458,45 +458,73 @@ def get_events():
 @app.route('/get_admin_events/<admin_email>', methods=['GET'])
 def get_admin_events(admin_email):
     try:
-        # Find the admin and their event IDs
         admin = mongo.db.event_admins.find_one({'email': admin_email})
         if not admin:
             return jsonify({'error': 'Admin not found'}), 404
-            
+
         event_ids = admin.get('events', [])
-        
-        # Find all events for this admin using the event IDs
         events = list(mongo.db.events.find({'event_id': {'$in': event_ids}}))
-        
-        # Convert ObjectId to string for JSON serialization
+
         for event in events:
             event['_id'] = str(event['_id'])
-            
+
         return jsonify({
             'events': events,
             'message': 'Events fetched successfully'
         }), 200
-        
+
     except Exception as e:
         app.logger.error(f"Error fetching admin events: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
+
 @app.route("/get_registered_participants/<event_id>", methods=["GET"])
 def get_registered_participants(event_id):
     try:
-        participants = list(mongo.db.participants.find({"event_id": event_id}))
+        event = mongo.db.events.find_one({"event_id": event_id})
+        if not event:
+            return jsonify({"error": "Event not found"}), 404
+
+        participants = event.get("registrations", [])
 
         formatted_participants = [{
-            "participant_id": str(p["_id"]),
+            "participant_id": str(p.get("_id", "")),
             "name": p.get("name"),
             "email": p.get("email"),
-            "registered_at": p.get("registered_at").isoformat() if p.get("registered_at") else None
+            "roll_no": p.get("roll_no"),
+            "attendance_marked": p.get("attendance_marked", False),
+            "registered_at": p.get("registered_at"),
         } for p in participants]
 
         return jsonify({"participants": formatted_participants}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/mark_attendance", methods=["POST"])
+def mark_attendance():
+    try:
+        data = request.get_json()
+        event_id = data.get("event_id")
+        email = data.get("email")
+
+        if not event_id or not email:
+            return jsonify({"error": "Event ID and email are required"}), 400
+
+        result = mongo.db.events.update_one(
+            {"event_id": event_id, "registrations.email": email},
+            {"$set": {"registrations.$.attendance_marked": True}}
+        )
+
+        if result.modified_count == 0:
+            return jsonify({"error": "Attendance update failed"}), 400
+
+        return jsonify({"message": "Attendance marked successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 
 @app.route('/register_event/<event_id>', methods=['POST'])
 def register_event(event_id):
@@ -505,40 +533,42 @@ def register_event(event_id):
         name = data.get('name')
         email = data.get('email')
         roll_no = data.get('roll_no')
-        
+
         if not all([name, email, roll_no]):
             return jsonify({'error': 'Missing required fields'}), 400
-            
+
         # Check if event exists
         event = mongo.db.events.find_one({'event_id': event_id})
         if not event:
             return jsonify({'error': 'Event not found'}), 404
-            
+
         # Check if user is already registered
         if any(reg.get('email') == email for reg in event.get('registrations', [])):
             return jsonify({'error': 'You are already registered for this event'}), 400
-            
+
         registration = {
             'name': name,
             'email': email,
             'roll_no': roll_no,
+            'attendance_marked': False,  # 👈 New field for attendance
             'registered_at': datetime.datetime.now().isoformat()
         }
-        
+
         # Add registration to event
         mongo.db.events.update_one(
             {'event_id': event_id},
             {'$push': {'registrations': registration}}
         )
-        
+
         return jsonify({
             'message': 'Registration successful',
             'registration': registration
         }), 200
-        
+
     except Exception as e:
         app.logger.error(f"Error registering for event: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
+
 
 @app.route('/get_event_registrations/<event_id>', methods=['GET'])
 def get_event_registrations(event_id):

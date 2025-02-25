@@ -24,7 +24,8 @@ class _EventsPageState extends State<EventsPage> {
 
   Future<void> fetchEvents() async {
     try {
-      final response = await http.get(Uri.parse('http://192.168.219.231:5000/get_events'));
+      final response =
+          await http.get(Uri.parse('http://172.16.59.107:5000/get_events'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
@@ -45,11 +46,13 @@ class _EventsPageState extends State<EventsPage> {
   }
 
   Future<void> _showConfirmationDialog(Map<String, dynamic> event) async {
-    final studentProvider = Provider.of<StudentProvider>(context, listen: false);
-    
+    final studentProvider =
+        Provider.of<StudentProvider>(context, listen: false);
+
     if (studentProvider.currentStudent == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login first to register for events')),
+        const SnackBar(
+            content: Text('Please login first to register for events')),
       );
       // Navigate to login page
       Navigator.pushNamed(context, '/login');
@@ -89,7 +92,8 @@ class _EventsPageState extends State<EventsPage> {
   }
 
   Future<void> _registerForEvent(Map<String, dynamic> event) async {
-    final studentProvider = Provider.of<StudentProvider>(context, listen: false);
+    final studentProvider =
+        Provider.of<StudentProvider>(context, listen: false);
     final email = studentProvider.email;
     final name = studentProvider.name;
     final rollNo = studentProvider.rollNo;
@@ -103,7 +107,8 @@ class _EventsPageState extends State<EventsPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.219.231:5000/register_event/${event['event_id']}'),
+        Uri.parse(
+            'http://172.16.59.107:5000/register_event/${event['event_id']}'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'name': name,
@@ -113,21 +118,21 @@ class _EventsPageState extends State<EventsPage> {
       );
 
       if (response.statusCode == 200) {
-        // Generate QR code data
         final qrData = json.encode({
           'event_id': event['event_id'],
           'email': email,
         });
 
-        // Store QR code data locally
+        // 🔥 Ensure QR Code is saved persistently
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('qr_${event['event_id']}', qrData);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registered successfully and QR code generated')),
+            const SnackBar(
+                content: Text('Registered successfully and QR code saved')),
           );
-          fetchEvents(); // Refresh events list
+          fetchEvents();
         }
       } else {
         final errorData = json.decode(response.body);
@@ -182,13 +187,15 @@ class _EventsPageState extends State<EventsPage> {
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                Icon(Icons.calendar_today, 
-                                     color: Theme.of(context).colorScheme.primary),
+                                Icon(Icons.calendar_today,
+                                    color:
+                                        Theme.of(context).colorScheme.primary),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     'From: ${event['start_date']}',
-                                    style: Theme.of(context).textTheme.bodyMedium,
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -197,13 +204,15 @@ class _EventsPageState extends State<EventsPage> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                Icon(Icons.calendar_today, 
-                                     color: Theme.of(context).colorScheme.primary),
+                                Icon(Icons.calendar_today,
+                                    color:
+                                        Theme.of(context).colorScheme.primary),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     'To: ${event['end_date']}',
-                                    style: Theme.of(context).textTheme.bodyMedium,
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -212,13 +221,15 @@ class _EventsPageState extends State<EventsPage> {
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                Icon(Icons.person, 
-                                     color: Theme.of(context).colorScheme.primary),
+                                Icon(Icons.person,
+                                    color:
+                                        Theme.of(context).colorScheme.primary),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     'Organized by: ${event['organized_by']}',
-                                    style: Theme.of(context).textTheme.bodyMedium,
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -230,7 +241,8 @@ class _EventsPageState extends State<EventsPage> {
                                 Expanded(
                                   child: Text(
                                     'Price: ${event['pricing']}',
-                                    style: Theme.of(context).textTheme.bodyMedium,
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),

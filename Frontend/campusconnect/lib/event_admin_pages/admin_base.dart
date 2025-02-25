@@ -1,7 +1,10 @@
 import 'package:campusconnect/event_admin_pages/attendance_page.dart';
+import 'package:campusconnect/event_admin_pages/manage_event.dart';
+import 'package:campusconnect/event_admin_pages/registrations.dart';
+import 'package:campusconnect/pages/login_page.dart';
 import 'package:flutter/material.dart';
-import 'home.dart';
-import 'registrations.dart';
+import 'package:provider/provider.dart';
+import '../event_admin_providers/user_provider.dart';
 
 class AdminBasePage extends StatefulWidget {
   @override
@@ -10,11 +13,10 @@ class AdminBasePage extends StatefulWidget {
 
 class _AdminBasePageState extends State<AdminBasePage> {
   int _selectedIndex = 0;
-  
+
   final List<Widget> _pages = [
-    //EventAdminHomePage(),
     RegistrationsPage(),
-   // AttendancePage(),
+    AdminEventsPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -23,16 +25,14 @@ class _AdminBasePageState extends State<AdminBasePage> {
     });
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Events',
-          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.people),
             label: 'Registrations',

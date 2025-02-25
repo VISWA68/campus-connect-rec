@@ -1,9 +1,9 @@
+import 'package:campusconnect/pages/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../event_admin_providers/user_provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../config.dart';
 
 class RegistrationsPage extends StatefulWidget {
   @override
@@ -14,6 +14,17 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
   String? selectedEventId;
   List<Map<String, dynamic>> registrations = [];
   bool isLoading = false;
+  void _logout() {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    userProvider.logout();
+
+    // Navigate back to login screen
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+          builder: (context) => LoginPage()), // Replace with actual login page
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +33,13 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
 
     return Scaffold(
       appBar: AppBar(
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
+            tooltip: "Logout",
+          ),
+        ],
         title: const Text('Event Registrations'),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
@@ -40,7 +58,8 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
                 for (var event in events)
                   DropdownMenuItem<String>(
                     value: event['event_id']?.toString() ?? '',
-                    child: Text(event['event_name']?.toString() ?? 'Unknown Event'),
+                    child: Text(
+                        event['event_name']?.toString() ?? 'Unknown Event'),
                   ),
               ],
               onChanged: (value) {
@@ -80,12 +99,17 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
                                           'S',
                                     ),
                                   ),
-                                  title: Text(registration['name']?.toString() ?? 'Unknown'),
+                                  title: Text(
+                                      registration['name']?.toString() ??
+                                          'Unknown'),
                                   subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text('Email: ${registration['email']?.toString() ?? 'N/A'}'),
-                                      Text('Roll No: ${registration['roll_no']?.toString() ?? 'N/A'}'),
+                                      Text(
+                                          'Email: ${registration['email']?.toString() ?? 'N/A'}'),
+                                      Text(
+                                          'Roll No: ${registration['roll_no']?.toString() ?? 'N/A'}'),
                                       Text(
                                         'Registered: ${_formatDate(registration['registered_at']?.toString())}',
                                       ),
@@ -119,7 +143,7 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.219.231:5000/get_event_registrations/$eventId'),
+        Uri.parse('http://172.16.59.107:5000/get_event_registrations/$eventId'),
       );
 
       if (response.statusCode == 200) {

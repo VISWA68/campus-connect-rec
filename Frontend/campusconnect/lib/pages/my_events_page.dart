@@ -24,7 +24,8 @@ class _MyEventsPageState extends State<MyEventsPage> {
   }
 
   Future<void> fetchRegisteredEvents() async {
-    final studentProvider = Provider.of<StudentProvider>(context, listen: false);
+    final studentProvider =
+        Provider.of<StudentProvider>(context, listen: false);
     final email = studentProvider.email;
 
     if (email == null) {
@@ -36,7 +37,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.219.231:5000/get_registered_events/$email'),
+        Uri.parse('http://172.16.59.107:5000/get_registered_events/$email'),
       );
 
       if (response.statusCode == 200) {
@@ -64,7 +65,13 @@ class _MyEventsPageState extends State<MyEventsPage> {
   Future<String?> _getQrData(String eventId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getString('qr_$eventId');
+      final qrData = prefs.getString('qr_$eventId');
+
+      if (qrData == null) {
+        print('QR Code not found for event: $eventId');
+      }
+
+      return qrData;
     } catch (e) {
       print('Error getting QR data: $e');
       return null;
@@ -98,11 +105,13 @@ class _MyEventsPageState extends State<MyEventsPage> {
                                 FutureBuilder<String?>(
                                   future: _getQrData(event['event_id']),
                                   builder: (context, snapshot) {
-                                    if (snapshot.connectionState == ConnectionState.waiting) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
                                       return const CircularProgressIndicator();
                                     }
-                                    
-                                    if (snapshot.hasData && snapshot.data != null) {
+
+                                    if (snapshot.hasData &&
+                                        snapshot.data != null) {
                                       return Column(
                                         children: [
                                           QrImageView(
@@ -122,7 +131,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                                         ],
                                       );
                                     }
-                                    
+
                                     return const Text(
                                       'QR code not available',
                                       style: TextStyle(color: Colors.red),
@@ -130,8 +139,10 @@ class _MyEventsPageState extends State<MyEventsPage> {
                                   },
                                 ),
                                 const SizedBox(height: 16),
-                                Text('Organized by: ${event['organized_by'] ?? 'Unknown'}'),
-                                Text('Description: ${event['description'] ?? 'No description'}'),
+                                Text(
+                                    'Organized by: ${event['organized_by'] ?? 'Unknown'}'),
+                                Text(
+                                    'Description: ${event['description'] ?? 'No description'}'),
                                 const SizedBox(height: 8),
                                 Container(
                                   padding: const EdgeInsets.all(8),

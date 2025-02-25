@@ -1,26 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import '../event_admin_providers/user_provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../event_admin_providers/user_provider.dart';
 
 class AttendancePage extends StatefulWidget {
   final String eventId;
   final String eventName;
 
-  const AttendancePage({
-    Key? key,
-    required this.eventId,
-    required this.eventName,
-  }) : super(key: key);
+  const AttendancePage(
+      {Key? key, required this.eventId, required this.eventName})
+      : super(key: key);
 
   @override
   _AttendancePageState createState() => _AttendancePageState();
 }
 
 class _AttendancePageState extends State<AttendancePage> {
-  List<Map<String, dynamic>> registrations = [];
   bool isScanning = false;
   bool isLoading = true;
   final MobileScannerController controller = MobileScannerController();
@@ -32,56 +29,57 @@ class _AttendancePageState extends State<AttendancePage> {
   }
 
   Future<void> fetchRegistrations() async {
-    try {
-      final response = await http.get(
-        Uri.parse('http://192.168.219.231:5000/get_event_registrations/${widget.eventId}'),
-      );
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    await userProvider.fetchRegisteredParticipants(widget.eventId);
+    setState(() {
+      isLoading = false;
+    });
+  }
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          registrations = List<Map<String, dynamic>>.from(data['registrations']);
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Error fetching registrations: $e');
+Future<void> markAttendance(String email) async {
+  try {
+    final response = await http.post(
+      Uri.parse('http://172.16.59.107:5000/mark_attendance'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'event_id': widget.eventId,
+        'email': email,
+      }),
+    );
+
+    if (response.statusCode == 200) {
       setState(() {
-        isLoading = false;
+        for (var participant in Provider.of<UserProvider>(context, listen: false).registeredParticipants) {
+          if (participant['email'] == email) {
+            participant['attendance_marked'] = true;
+          }
+        }
       });
-    }
-  }
 
-  Future<void> markAttendance(String email) async {
-    try {
-      final response = await http.post(
-        Uri.parse('http://192.168.219.231:5000/mark_attendance'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'event_id': widget.eventId,
-          'email': email,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        // Refresh the registrations list
-        fetchRegistrations();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Attendance marked successfully')),
-        );
-      }
-    } catch (e) {
-      print('Error marking attendance: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error marking attendance: $e')),
+        SnackBar(content: Text('Attendance marked for $email')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to mark attendance')),
       );
     }
+  } catch (e) {
+    print('Error marking attendance: $e');
   }
+}
 
-  void onQRCodeDetected(String? qrData) {
-    if (qrData != null) {
-      try {
-        final data = json.decode(qrData);
+
+void onQRCodeDetected(String? qrData) {
+  if (qrData != null) {
+    print('QR Code Scanned: $qrData'); // Debugging
+
+    try {
+      final data = json.decode(qrData);
+      
+      if (data.containsKey('event_id') && data.containsKey('email')) {
+        print('Event ID: ${data['event_id']}, Email: ${data['email']}'); // Debugging
+
         if (data['event_id'] == widget.eventId) {
           markAttendance(data['email']);
         } else {
@@ -89,14 +87,20 @@ class _AttendancePageState extends State<AttendancePage> {
             const SnackBar(content: Text('Invalid QR code for this event')),
           );
         }
-      } catch (e) {
-        print('Error processing QR code: $e');
+      } else {
+        print('Invalid QR data format'); // Debugging
       }
+    } catch (e) {
+      print('Error processing QR code: $e');
     }
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Attendance - ${widget.eventName}'),
@@ -130,35 +134,38 @@ class _AttendancePageState extends State<AttendancePage> {
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : ListView.builder(
-                    itemCount: registrations.length,
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: userProvider.registeredParticipants.length,
                     itemBuilder: (context, index) {
-                      final registration = registrations[index];
-                      final bool isPresent = registration['attendance_marked'] == true;
+                      final participant =
+                          userProvider.registeredParticipants[index];
+                      final bool isPresent =
+                          participant['attendance_marked'] == true;
 
                       return Card(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 8.0,
-                        ),
+                        margin: const EdgeInsets.symmetric(vertical: 8.0),
                         color: isPresent ? Colors.green[50] : Colors.red[50],
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: isPresent ? Colors.green : Colors.red,
+                            backgroundColor:
+                                isPresent ? Colors.green : Colors.red,
                             child: Icon(
                               isPresent ? Icons.check : Icons.person,
                               color: Colors.white,
                             ),
                           ),
-                          title: Text(registration['name']),
+                          title: Text(participant['name']),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Email: ${registration['email']}'),
-                              Text('Roll No: ${registration['roll_no']}'),
+                              Text('Email: ${participant['email']}'),
+                              Text('Roll No: ${participant['roll_no']}'),
                               Text(
-                                isPresent ? 'Present' : 'Absent',
+                                isPresent ? 'Present' : 'Not marked',
                                 style: TextStyle(
-                                  color: isPresent ? Colors.green[700] : Colors.red[700],
+                                  color: isPresent
+                                      ? Colors.green[700]
+                                      : Colors.red[700],
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
