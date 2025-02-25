@@ -32,7 +32,7 @@ class _ChatForumPageState extends State<ChatForumPage> {
   }
 
   void _reportMessage(String userId, String message) async {
-    final url = Uri.parse('http://192.168.219.231:5000/report_message');
+    final url = Uri.parse('http://172.16.59.107:5000/report_message');
     try {
       final response = await http.post(
         url,
