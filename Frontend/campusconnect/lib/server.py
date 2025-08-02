@@ -48,7 +48,6 @@ def classify_toxicity(text):
 
 def init_db():
     try:
-        # Create collections if they don't exist
         if "students" not in mongo.db.list_collection_names():
             mongo.db.create_collection("students")
             
@@ -170,7 +169,6 @@ def send_message():
         if not sender_id or not sender_name or not message:
             return jsonify({"error": "All fields are required"}), 400
 
-        # Check message toxicity
         toxicity_result = classify_toxicity(message)
         
         message_data = {
@@ -181,12 +179,8 @@ def send_message():
             "toxicity": toxicity_result
         }
 
-        # Store the message
         mongo.db.public_chat.insert_one(message_data)
-
-        # If message is toxic, automatically report it
         if toxicity_result and toxicity_result["label"] in ["Mildly Toxic", "Severely Toxic"]:
-            # Add to reported messages
             existing_report = mongo.db.reported_messages.find_one({"user_id": sender_id})
 
             if existing_report:
@@ -301,7 +295,7 @@ def get_reported_messages():
                 "user_name": user["name"] if user else "Unknown User",
                 "email": user["email"] if user else "Unknown Email",
                 "report_count": report["report_count"],
-                "messages": report["messages"],  # List of reported messages with timestamps
+                "messages": report["messages"],  
                 "first_reported_at": report["first_reported_at"].isoformat(),
             })
 
@@ -310,7 +304,6 @@ def get_reported_messages():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Event Admin Routes
 @app.route("/register_event_admin", methods=["POST"])
 def register_event_admin():
     try:
@@ -320,20 +313,17 @@ def register_event_admin():
 
         if not email or not password:
             return jsonify({"error": "Email and password are required"}), 400
-
-        # Check if admin already exists
         existing_admin = mongo.db.event_admins.find_one({"email": email})
         if existing_admin:
             return jsonify({"error": "Email already registered"}), 400
 
-        # Hash the password using bcrypt
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         
         admin_data = {
             "email": email,
             "password": hashed_password,
             "created_at": datetime.datetime.now().isoformat(),
-            "events": []  # Initialize empty events list
+            "events": []  
         }
 
         mongo.db.event_admins.insert_one(admin_data)
@@ -353,22 +343,17 @@ def login_event_admin():
         if not email or not password:
             return jsonify({'error': 'Email and password are required'}), 400
 
-        # Find the admin
         admin = mongo.db.event_admins.find_one({'email': email})
         if not admin:
             return jsonify({'error': 'Admin not found'}), 404
 
-        # Verify password using bcrypt
         if not bcrypt.check_password_hash(admin['password'], password):
             return jsonify({'error': 'Invalid password'}), 401
 
-        # Get event IDs from admin document
         event_ids = admin.get('events', [])
         
-        # Fetch events for this admin using event IDs
         events = list(mongo.db.events.find({'event_id': {'$in': event_ids}}))
         
-        # Convert ObjectId to string for JSON serialization
         for event in events:
             event['_id'] = str(event['_id'])
 
@@ -381,13 +366,11 @@ def login_event_admin():
         app.logger.error(f"Error in admin login: {str(e)}")
         return jsonify({'error': f'Internal server error: {str(e)}'}), 500
 
-# Event Management Routes
 @app.route('/create_event', methods=['POST'])
 def create_event():
     try:
         data = request.get_json()
         
-        # Required fields
         event_name = data.get('event_name')
         start_date = data.get('start_date')
         end_date = data.get('end_date')
@@ -399,7 +382,6 @@ def create_event():
         if not all([event_name, start_date, end_date, organized_by, description, pricing, admin_email]):
             return jsonify({'error': 'Missing required fields'}), 400
         
-        # Generate a new event ID
         event_id = str(ObjectId())
         
         event = {
@@ -415,16 +397,13 @@ def create_event():
             'registrations': []
         }
         
-        # Insert the event
         mongo.db.events.insert_one(event)
         
-        # Update the admin's events list
         mongo.db.event_admins.update_one(
             {'email': admin_email},
             {'$push': {'events': event_id}}
         )
         
-        # Remove the ObjectId before sending response
         event['_id'] = str(event.get('_id', ''))
         
         return jsonify({
@@ -439,10 +418,8 @@ def create_event():
 @app.route('/get_events', methods=['GET'])
 def get_events():
     try:
-        # Fetch all events
         events = list(mongo.db.events.find())
         
-        # Convert ObjectId to string for JSON serialization
         for event in events:
             event['_id'] = str(event['_id'])
             
@@ -537,12 +514,10 @@ def register_event(event_id):
         if not all([name, email, roll_no]):
             return jsonify({'error': 'Missing required fields'}), 400
 
-        # Check if event exists
         event = mongo.db.events.find_one({'event_id': event_id})
         if not event:
             return jsonify({'error': 'Event not found'}), 404
 
-        # Check if user is already registered
         if any(reg.get('email') == email for reg in event.get('registrations', [])):
             return jsonify({'error': 'You are already registered for this event'}), 400
 
@@ -550,11 +525,10 @@ def register_event(event_id):
             'name': name,
             'email': email,
             'roll_no': roll_no,
-            'attendance_marked': False,  # 👈 New field for attendance
+            'attendance_marked': False, 
             'registered_at': datetime.datetime.now().isoformat()
         }
 
-        # Add registration to event
         mongo.db.events.update_one(
             {'event_id': event_id},
             {'$push': {'registrations': registration}}
@@ -573,12 +547,10 @@ def register_event(event_id):
 @app.route('/get_event_registrations/<event_id>', methods=['GET'])
 def get_event_registrations(event_id):
     try:
-        # Find the event
         event = mongo.db.events.find_one({'event_id': event_id})
         if not event:
             return jsonify({'error': 'Event not found'}), 404
             
-        # Get registrations from the event
         registrations = event.get('registrations', [])
             
         return jsonify({
@@ -593,7 +565,6 @@ def get_event_registrations(event_id):
 @app.route('/get_registered_events/<email>', methods=['GET'])
 def get_registered_events(email):
     try:
-        # Find all events where this email is registered
         events = mongo.db.events.find({
             'registrations': {
                 '$elemMatch': {
@@ -611,10 +582,9 @@ def get_registered_events(email):
                 'start_date': event['start_date'],
                 'organized_by': event['organized_by'],
                 'pricing': event.get('pricing', 'Free'),
-                'attendance_marked': False  # Default to False
+                'attendance_marked': False  
             }
             
-            # Check if attendance is marked for this user
             for registration in event.get('registrations', []):
                 if registration['email'] == email:
                     event_data['attendance_marked'] = registration.get('attendance_marked', False)
@@ -628,7 +598,6 @@ def get_registered_events(email):
         app.logger.error(f"Error fetching registered events: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
-# Initialize the application
 if __name__ == "__main__":
     init_db()  
     app.run(host="0.0.0.0", debug=True)

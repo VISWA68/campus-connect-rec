@@ -24,7 +24,7 @@ class ApiService {
         return {
           'success': true,
           'message': responseData['message'],
-          'studentId': responseData['student_id'], // This will be the ObjectId
+          'studentId': responseData['student_id'], // ObjectId
         };
       } else {
         return {
@@ -57,7 +57,7 @@ class ApiService {
         return {
           'success': true,
           'message': responseData['message'],
-          'studentId': responseData['student_id'], // This will be the ObjectId
+          'studentId': responseData['student_id'], // ObjectId
         };
       } else {
         return {
@@ -94,9 +94,7 @@ class ApiService {
           'toxicity': responseData['toxicity'],
         };
       } else {
-        return {
-          'error': responseData['error'] ?? 'Message sending failed'
-        };
+        return {'error': responseData['error'] ?? 'Message sending failed'};
       }
     } catch (e) {
       return {'error': 'An error occurred: $e'};
@@ -119,9 +117,10 @@ class ApiService {
     }
   }
 
-    Future<Map<String, dynamic>?> getStudentDetails(String studentId) async {
+  Future<Map<String, dynamic>?> getStudentDetails(String studentId) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/get_student/$studentId'));
+      final response =
+          await http.get(Uri.parse('$baseUrl/get_student/$studentId'));
 
       if (response.statusCode == 200) {
         return json.decode(response.body);

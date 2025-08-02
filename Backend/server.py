@@ -598,6 +598,55 @@ def get_registered_events(email):
         app.logger.error(f"Error fetching registered events: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
+################################INTERESTS###########################################################
+@app.route("/get_interests/<student_id>", methods=["GET"])
+def get_interests(student_id):
+    try:
+        user = mongo.db.user_interests.find_one({"user_id": student_id})
+        if user:
+            return jsonify({"interests": user.get("interests", [])}), 200
+        else:
+            return jsonify({"interests": []}), 200  # Return empty list if no interests found
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/add_interests", methods=["POST"])
+def add_interests():
+    try:
+        data = request.json
+        user_id = data.get("user_id")
+        interests = data.get("interests", [])
+
+        if not user_id or not interests:
+            return jsonify({"error": "Missing user_id or interests"}), 400
+
+        collection.update_one(
+            {"user_id": user_id},
+            {"$set": {"interests": interests}},
+            upsert=True
+        )
+
+        # Reinitialize FAISS for matching
+        initialize_faiss()
+
+        return jsonify({"message": "Interests added successfully!"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/get_similar_users", methods=["POST"])
+def get_similar_users():
+    data = request.json
+    user_id = data.get("user_id")
+
+    if not user_id:
+        return jsonify({"error": "Missing user_id"}), 400
+
+    recommendations = recommend_users(user_id, top_n=5)
+
+    return jsonify({"similar_users": recommendations})
+
+
 if __name__ == "__main__":
     init_db()  
     app.run(host="0.0.0.0", debug=True)

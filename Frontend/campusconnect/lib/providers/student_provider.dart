@@ -9,7 +9,7 @@ class StudentProvider extends ChangeNotifier {
   final ApiService _apiService = ApiService();
   bool _isLoading = false;
   String? _error;
-  bool _isAnonymous = false; // Anonymous Chat Toggle
+  bool _isAnonymous = false; 
 
   Student? get currentStudent => _currentStudent;
   String? get studentId => _studentId;
@@ -17,12 +17,10 @@ class StudentProvider extends ChangeNotifier {
   String? get error => _error;
   bool get isAnonymous => _isAnonymous;
 
-  // Add getters for student details with null checks
   String? get name => _currentStudent?.name;
   String? get email => _currentStudent?.email;
   String? get rollNo => _currentStudent?.rollNo;
 
-  // Helper method to check if student is logged in
   bool get isLoggedIn => _currentStudent != null;
 
   void toggleAnonymousMode(bool value) {
