@@ -17,7 +17,7 @@ CORS(app)
 app.config["MONGO_URI"] = os.getenv("MONGO_URI")
 mongo = PyMongo(app)
 bcrypt = Bcrypt(app)
-SECRET_KEY = "c9e4507fb83fc7b043ab36b702cd466afdcdbd98c14a43a817cabc72847b7392"
+SECRET_KEY = os.getenv("KEY")
 
 print("Loading the toxicity classifier...")
 try:

@@ -37,7 +37,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://172.16.59.107:5000/get_registered_events/$email'),
+        Uri.parse('http://192.168.57.231:5000/get_registered_events/$email'),
       );
 
       if (response.statusCode == 200) {

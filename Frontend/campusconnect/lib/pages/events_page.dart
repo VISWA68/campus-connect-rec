@@ -25,7 +25,7 @@ class _EventsPageState extends State<EventsPage> {
   Future<void> fetchEvents() async {
     try {
       final response =
-          await http.get(Uri.parse('http://172.16.59.107:5000/get_events'));
+          await http.get(Uri.parse('${Config.serverUrl}/get_events'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {

@@ -1,3 +1,4 @@
+import 'package:campusconnect/config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -13,7 +14,7 @@ class UserProvider extends ChangeNotifier {
   Future<bool> loginAsAdmin(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('http://172.16.59.107:5000/login_event_admin'),
+        Uri.parse('${Config.serverUrl}/login_event_admin'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': email,

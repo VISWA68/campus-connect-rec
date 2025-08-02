@@ -1,3 +1,4 @@
+import 'package:campusconnect/config.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -39,7 +40,7 @@ class _AttendancePageState extends State<AttendancePage> {
 Future<void> markAttendance(String email) async {
   try {
     final response = await http.post(
-      Uri.parse('http://172.16.59.107:5000/mark_attendance'),
+      Uri.parse('${Config.serverUrl}/mark_attendance'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
         'event_id': widget.eventId,

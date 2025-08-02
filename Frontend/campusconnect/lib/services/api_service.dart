@@ -1,8 +1,9 @@
 import 'dart:convert';
+import 'package:campusconnect/config.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'http://172.16.59.107:5000';
+  static const String baseUrl = Config.serverUrl;
 
   Future<Map<String, dynamic>> register(
       String name, String rollNo, String email, String password) async {

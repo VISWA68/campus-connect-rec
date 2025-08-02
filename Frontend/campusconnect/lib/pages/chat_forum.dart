@@ -1,3 +1,4 @@
+import 'package:campusconnect/config.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -32,7 +33,7 @@ class _ChatForumPageState extends State<ChatForumPage> {
   }
 
   void _reportMessage(String userId, String message) async {
-    final url = Uri.parse('http://172.16.59.107:5000/report_message');
+    final url = Uri.parse('${Config.serverUrl}/report_message');
     try {
       final response = await http.post(
         url,

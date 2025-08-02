@@ -1,3 +1,4 @@
+import 'package:campusconnect/config.dart';
 import 'package:campusconnect/pages/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -143,7 +144,7 @@ class _RegistrationsPageState extends State<RegistrationsPage> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://172.16.59.107:5000/get_event_registrations/$eventId'),
+        Uri.parse('${Config.serverUrl}/get_event_registrations/$eventId'),
       );
 
       if (response.statusCode == 200) {
