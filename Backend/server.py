@@ -6,11 +6,15 @@ from bson import ObjectId
 import datetime
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 import torch
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
-app.config["MONGO_URI"] = "mongodb+srv://v:viswa123@cluster0.dhc4mq5.mongodb.net/CampusConnect?retryWrites=true&w=majority"
+app.config["MONGO_URI"] = os.getenv("MONGO_URI")
 mongo = PyMongo(app)
 bcrypt = Bcrypt(app)
 SECRET_KEY = "c9e4507fb83fc7b043ab36b702cd466afdcdbd98c14a43a817cabc72847b7392"
